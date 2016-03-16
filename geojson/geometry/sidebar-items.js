@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Value","The underlying Geometry value"]],"struct":[["Geometry","Geometry Objects"]]});
