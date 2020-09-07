@@ -548,4 +548,14 @@ mod tests {
 
         assert_eq!(3, geo_geometry_collection.0.len());
     }
+
+    #[test]
+    fn geokson_geometry_conversion() {
+        let coords = vec![100.0, 0.2];
+        let geojson_geometry = Geometry::from(Value::Point(coords.clone()));
+        let geo_geometry: geo_types::Geometry<f64> = geojson_geometry.try_into().expect("Shoudl be able to convert to geo_types::Geometry");
+        let geo_point: geo_types::Point<_> = geo_geometry.try_into().expect("this should be a point");
+        assert_almost_eq!(geo_point.x(), coords[0], 1e-6);
+        assert_almost_eq!(geo_point.y(), coords[1], 1e-6);
+    }
 }
