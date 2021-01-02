@@ -69,6 +69,12 @@ impl Feature {
             .and_then(|props| props.get(key.as_ref()))
     }
 
+    pub fn property_as<'a, T>(&'a self, key: &str) -> Option<T>
+        where T: serde::Deserialize<'a>,
+    {
+        self.property(key).and_then(|p| T::deserialize(p).ok())
+    }
+
     /// Return true iff this key is set
     pub fn contains_property(&self, key: impl AsRef<str>) -> bool {
         match &self.properties {
@@ -414,6 +420,14 @@ mod tests {
 
         feature.set_property("foo", 12);
         assert_eq!(feature.property("foo"), Some(&json!(12)));
+        assert_eq!(feature.property("foo").and_then(|p| p.as_u64()), Some(12));
+
+        // Automatic type conversions
+        assert_eq!(feature.property_as::<u64>("foo").unwrap(), 12);
+        assert_eq!(feature.property_as::<u16>("foo").unwrap(), 12);
+        assert_eq!(feature.property_as("foo"), Some(12_isize));
+        assert!(feature.property_as::<String>("foo").is_none());
+
         assert_eq!(feature.len_properties(), 1);
         assert_eq!(feature.contains_property("foo"), true);
         assert_eq!(
@@ -426,5 +440,16 @@ mod tests {
         assert_eq!(feature.len_properties(), 0);
         assert_eq!(feature.contains_property("foo"), false);
         assert_eq!(feature.properties_iter().collect::<Vec<_>>(), vec![]);
+
+        // Strings can be accessed as &strs too
+        feature.set_property("bar", "hello world");
+        assert_eq!(feature.property_as::<&str>("bar").unwrap(), "hello world");
+        assert_eq!(feature.property_as::<String>("bar").unwrap(), "hello world");
+
+        feature.set_property("baz", vec![1, 2, 3]);
+        assert_eq!(feature.property_as::<Vec<u8>>("baz").unwrap(), vec![1, 2, 3]);
+
+        // This doesn't work, fails at run time
+        //assert_eq!(feature.property_as::<&[u8]>("baz").unwrap(), &[1, 2, 3]);
     }
 }
